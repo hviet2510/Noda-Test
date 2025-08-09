@@ -1,94 +1,161 @@
--- File: enemylist.lua
--- Cơ sở dữ liệu farm cho Blox Fruits
+-- enemylist.lua
+-- Danh sách quái và khu vực farm cho Sea 1 (First Sea) trong Blox Fruits
+local EnemyList = {}
 
---[[
-    Giải thích cấu trúc:
-    - Name: Tên hiển thị trong menu dropdown.
-    - Mob: Tên chính xác của model quái trong game.
-    - MinLevel: Cấp độ tối thiểu để farm hiệu quả.
-    - MaxLevel: Cấp độ tối đa nên farm ở đây.
-    - QuestNPC: Tên NPC giao nhiệm vụ. Thường có dạng "Quest Giver" hoặc tên riêng.
-    - QuestPos: Vị trí của NPC.
-    - QuestName: Tên nhiệm vụ mà game sử dụng nội bộ (thường trùng với tên Mob).
-    - QuestNumber: ID của nhiệm vụ. Trong Blox Fruits, thường là 1 cho quái và 2 cho boss.
-]]
-
-return {
-    -- == Sea 1 ==
+EnemyList = {
+    -- Khu vực 1: Middle Town (Level 1-10)
     {
-        Name = "Pirate Starter (Lv. 1-10)",
-        Mob = "Bandit",
         MinLevel = 1,
         MaxLevel = 10,
-        QuestNPC = "Quest Giver", -- NPC ở đảo Khỉ
-        QuestPos = Vector3.new(-1034, 17, 1502),
-        QuestName = "Bandit",
-        QuestNumber = 1 
+        Mob = "Bandit",
+        QuestName = "Bandit Quest",
+        QuestNumber = 1,
+        QuestPos = CFrame.new(1057, 15, 1554) -- Tọa độ NPC Bandit Quest
     },
+    
+    -- Khu vực 2: Jungle (Level 15-30)
     {
-        Name = "Jungle (Lv. 15-30)",
-        Mob = "Monkey",
-        MinLevel = 11,
+        MinLevel = 15,
         MaxLevel = 30,
-        QuestNPC = "Quest Giver", -- NPC ở đảo Rừng
-        QuestPos = Vector3.new(-1319, 34, -137),
-        QuestName = "Monkey",
-        QuestNumber = 1
+        Mob = "Monkey",
+        QuestName = "Jungle Quest",
+        QuestNumber = 1,
+        QuestPos = CFrame.new(-1320, 15, 350) -- Tọa độ NPC Jungle Quest
     },
     {
-        Name = "Desert (Lv. 60-90)",
+        MinLevel = 15,
+        MaxLevel = 30,
+        Mob = "Gorilla",
+        QuestName = "Jungle Quest",
+        QuestNumber = 2,
+        QuestPos = CFrame.new(-1320, 15, 350) -- Tọa độ NPC Jungle Quest
+    },
+    
+    -- Khu vực 3: Pirate Village (Level 30-60)
+    {
+        MinLevel = 30,
+        MaxLevel = 60,
+        Mob = "Pirate",
+        QuestName = "Pirate Village Quest",
+        QuestNumber = 1,
+        QuestPos = CFrame.new(-1122, 15, 4397) -- Tọa độ NPC Pirate Village Quest
+    },
+    
+    -- Khu vực 4: Desert (Level 60-90)
+    {
+        MinLevel = 60,
+        MaxLevel = 75,
         Mob = "Desert Bandit",
-        MinLevel = 31,
+        QuestName = "Desert Quest",
+        QuestNumber = 1,
+        QuestPos = CFrame.new(2394, 15, 2116) -- Tọa độ NPC Desert Quest
+    },
+    {
+        MinLevel = 75,
         MaxLevel = 90,
-        QuestNPC = "Quest Giver", -- NPC ở đảo Sa Mạc
-        QuestPos = Vector3.new(943, 20, -1004),
-        QuestName = "Desert Bandit",
-        QuestNumber = 1
+        Mob = "Desert Officer",
+        QuestName = "Desert Quest",
+        QuestNumber = 2,
+        QuestPos = CFrame.new(2394, 15, 2116) -- Tọa độ NPC Desert Quest
     },
-
-    -- == Sea 2 ==
+    
+    -- Khu vực 5: Marine Fortress (Level 90-120)
     {
-        Name = "Kingdom of Rose (Lv. 700-775)",
-        Mob = "Swan Pirate",
-        MinLevel = 700,
-        MaxLevel = 775,
-        QuestNPC = "Quest Giver", -- NPC ở gần quán cà phê
-        QuestPos = Vector3.new(-923, 116, 1265),
-        QuestName = "Swan Pirate",
-        QuestNumber = 1
-    },
-    {
-        Name = "Green Zone (Lv. 800-850)",
+        MinLevel = 90,
+        MaxLevel = 120,
         Mob = "Marine Captain",
-        MinLevel = 776,
-        MaxLevel = 850,
-        QuestNPC = "Quest Giver", -- NPC ở Green Zone
-        QuestPos = Vector3.new(2066, 179, 131),
-        QuestName = "Marine Captain",
-        QuestNumber = 1
+        QuestName = "Marine Fortress Quest",
+        QuestNumber = 1,
+        QuestPos = CFrame.new(-5094, 15, 4313) -- Tọa độ NPC Marine Fortress Quest
     },
-
-    -- == Sea 3 ==
+    
+    -- Khu vực 6: Middle Town 2 (Level 120-150)
     {
-        Name = "Port Town (Lv. 1500-1550)",
-        Mob = "Pistol Millionaire",
-        MinLevel = 1500,
-        MaxLevel = 1550,
-        QuestNPC = "Quest Giver", -- NPC ở Port Town
-        QuestPos = Vector3.new(1694, 237, -3518),
-        QuestName = "Pistol Millionaire",
-        QuestNumber = 1
+        MinLevel = 120,
+        MaxLevel = 150,
+        Mob = "Brute",
+        QuestName = "Brute Quest",
+        QuestNumber = 1,
+        QuestPos = CFrame.new(1057, 15, 1554) -- Tọa độ NPC Brute Quest
+    },
+    
+    -- Khu vực 7: Pirate Ship (Level 150-200)
+    {
+        MinLevel = 150,
+        MaxLevel = 200,
+        Mob = "Pirate Lieutenant",
+        QuestName = "Pirate Ship Quest",
+        QuestNumber = 1,
+        QuestPos = CFrame.new(1341, 15, 150) -- Tọa độ NPC Pirate Ship Quest
+    },
+    
+    -- Khu vực 8: Frozen Village (Level 200-300)
+    {
+        MinLevel = 200,
+        MaxLevel = 250,
+        Mob = "Snow Trooper",
+        QuestName = "Snow Quest",
+        QuestNumber = 1,
+        QuestPos = CFrame.new(1341, 15, 150) -- Tọa độ NPC Snow Quest (cần kiểm tra lại)
     },
     {
-        Name = "Floating Turtle (Lv. 1800-1975)",
-        Mob = "Fishman Captain",
-        MinLevel = 1800,
-        MaxLevel = 1975,
-        QuestNPC = "Quest Giver", -- NPC ở trên đảo Rùa
-        QuestPos = Vector3.new(-3805, 484, -4933),
-        QuestName = "Fishman Captain",
-        QuestNumber = 1
+        MinLevel = 250,
+        MaxLevel = 300,
+        Mob = "Winter Warrior",
+        QuestName = "Snow Quest",
+        QuestNumber = 2,
+        QuestPos = CFrame.new(1341, 15, 150) -- Tọa độ NPC Snow Quest
     },
-
-    -- Thêm các khu vực và boss khác vào đây...
+    
+    -- Khu vực 9: Underwater City (Level 300-375)
+    {
+        MinLevel = 300,
+        MaxLevel = 375,
+        Mob = "Shark Soldier",
+        QuestName = "Underwater Quest",
+        QuestNumber = 1,
+        QuestPos = CFrame.new(-10254, 15, -10349) -- Tọa độ NPC Underwater Quest
+    },
+    
+    -- Khu vực 10: Marine HQ (Level 375-450)
+    {
+        MinLevel = 375,
+        MaxLevel = 450,
+        Mob = "Marine Commodore",
+        QuestName = "Marine HQ Quest",
+        QuestNumber = 1,
+        QuestPos = CFrame.new(-2571, 15, 2381) -- Tọa độ NPC Marine HQ Quest
+    },
+    
+    -- Khu vực 11: Prison (Level 450-550)
+    {
+        MinLevel = 450,
+        MaxLevel = 550,
+        Mob = "Prisoner",
+        QuestName = "Prison Quest",
+        QuestNumber = 1,
+        QuestPos = CFrame.new(5360, 15, 60) -- Tọa độ NPC Prison Quest
+    },
+    
+    -- Khu vực 12: Pirate Raid (Level 550-625)
+    {
+        MinLevel = 550,
+        MaxLevel = 625,
+        Mob = "Pirate Millionaire",
+        QuestName = "Pirate Raid Quest",
+        QuestNumber = 1,
+        QuestPos = CFrame.new(-1214, 15, 3332) -- Tọa độ NPC Pirate Raid Quest
+    },
+    
+    -- Khu vực 13: Dark Arena (Level 625-700)
+    {
+        MinLevel = 625,
+        MaxLevel = 700,
+        Mob = "Dark Master",
+        QuestName = "Dark Arena Quest",
+        QuestNumber = 1,
+        QuestPos = CFrame.new(-1214, 15, 3332) -- Tọa độ NPC Dark Arena Quest (cần kiểm tra lại)
+    }
 }
+
+return EnemyList
