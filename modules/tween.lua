@@ -3,52 +3,54 @@ local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
 
 local TweenModule = {}
-TweenModule.CurrentTween = nil
+local currentTween
 
--- MoveTo di chuyển mượt đến targetPosition (Vector3)
--- duration: số giây, mặc định 1
--- onComplete: hàm callback khi tween hoàn thành (tùy chọn)
-function TweenModule:MoveTo(targetPosition, duration, onComplete)
+function TweenModule:MoveTo(targetPosition, duration, callback)
     local player = Players.LocalPlayer
-    if not player then return nil end
+    if not player then return end
 
-    local character = player.Character or player.CharacterAdded:Wait()
-    if not character then return nil end
+    local character = player.Character
+    if not character then return end
 
-    local hrp = character:FindFirstChild("HumanoidRootPart")
-    if not hrp then return nil end
-
-    -- Hủy tween cũ nếu còn chạy
-    if self.CurrentTween then
-        self.CurrentTween:Cancel()
-        self.CurrentTween = nil
-    end
+    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+    if not humanoidRootPart then return end
 
     duration = duration or 1
-    local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
-    local goal = {CFrame = CFrame.new(targetPosition)}
 
-    local tween = TweenService:Create(hrp, tweenInfo, goal)
-    self.CurrentTween = tween
-
-    if onComplete and type(onComplete) == "function" then
-        tween.Completed:Connect(function(status)
-            -- chỉ gọi khi tween hoàn tất tự nhiên, không gọi nếu bị cancel
-            if status == Enum.PlaybackState.Completed then
-                onComplete()
-            end
-        end)
+    -- Nếu có tween đang chạy thì hủy
+    if currentTween then
+        currentTween:Cancel()
+        currentTween = nil
     end
 
-    tween:Play()
-    return tween
+    local tweenInfo = TweenInfo.new(
+        duration,
+        Enum.EasingStyle.Linear,
+        Enum.EasingDirection.Out,
+        0,
+        false,
+        0
+    )
+
+    currentTween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = CFrame.new(targetPosition)})
+    currentTween:Play()
+
+    if callback then
+        currentTween.Completed:Connect(function()
+            callback()
+            currentTween = nil
+        end)
+    else
+        currentTween.Completed:Connect(function()
+            currentTween = nil
+        end)
+    end
 end
 
--- Dừng tween hiện tại nếu có
 function TweenModule:Stop()
-    if self.CurrentTween then
-        self.CurrentTween:Cancel()
-        self.CurrentTween = nil
+    if currentTween then
+        currentTween:Cancel()
+        currentTween = nil
     end
 end
 
