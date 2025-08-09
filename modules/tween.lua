@@ -1,50 +1,37 @@
--- File: tween.lua
--- Module cơ bản để quản lý chuyển động mượt mà của nhân vật
-
+-- tween.lua
+-- Module quản lý di chuyển mượt mà với TweenService
 local TweenService = game:GetService("TweenService")
-local Players = game:GetService("Players")
 
-local tweenModule = {}
+local TweenModule = {}
 
-local currentTween = nil -- Biến để lưu trữ tween đang chạy
+-- Tạo tween cho di chuyển
+function TweenModule:MoveTo(targetPosition)
+    local player = game.Players.LocalPlayer
+    local character = player.Character
+    if not character or not character:FindFirstChild("HumanoidRootPart") then return end
 
--- Hàm chính để di chuyển nhân vật
-function tweenModule:MoveTo(targetPosition)
-    -- Nếu đang có một chuyển động cũ, hủy nó đi
-    if currentTween and currentTween.PlaybackState == Enum.PlaybackState.Playing then
-        currentTween:Cancel()
-    end
-
-    local player = Players.LocalPlayer
-    local character = player and player.Character
-    if not character then return end
-
-    local hrp = character:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-
-    -- Cấu hình cho chuyển động (0.5 giây, kiểu Quad cho tự nhiên)
+    local humanoidRootPart = character.HumanoidRootPart
     local tweenInfo = TweenInfo.new(
-        0.5,
-        Enum.EasingStyle.Quad,
-        Enum.EasingDirection.Out
+        1, -- Thời gian di chuyển (1 giây, có thể điều chỉnh)
+        Enum.EasingStyle.Linear, -- Phong cách di chuyển
+        Enum.EasingDirection.Out, -- Hướng di chuyển
+        0, -- Số lần lặp
+        false, -- Không đảo ngược
+        0 -- Độ trễ
     )
 
-    -- Đích đến mong muốn
-    local goal = {
-        CFrame = CFrame.new(targetPosition)
-    }
-
-    -- Tạo và chạy tween mới
-    currentTween = TweenService:Create(hrp, tweenInfo, goal)
-    currentTween:Play()
+    local tween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = CFrame.new(targetPosition)})
+    tween:Play()
+    tween.Completed:Wait() -- Chờ tween hoàn tất
 end
 
--- Hàm để dừng chuyển động ngay lập tức
-function tweenModule:Stop()
-    if currentTween then
-        currentTween:Cancel()
-        currentTween = nil
-    end
+-- Dừng tất cả tween hiện tại
+function TweenModule:Stop()
+    local player = game.Players.LocalPlayer
+    local character = player.Character
+    if not character or not character:FindFirstChild("HumanoidRootPart") then return end
+
+    TweenService:CancelAll()
 end
 
-return tweenModule
+return TweenModule
