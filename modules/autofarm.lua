@@ -8,18 +8,26 @@ return function(Window)
     local ReplicatedStorage = game:GetService("ReplicatedStorage")
     local VirtualInputManager = game:GetService("VirtualInputManager")
 
+    local Player = Players.LocalPlayer
+    local Character, Humanoid, HRP
+    local farming = false
+    local selectedFarmMode = "Tự động"
+    local attackKey = "Z"
+
     -- Lấy module tween và enemylist
     local tween = _G.modules.tween
     if not tween or not tween.MoveTo or not tween.Stop then
-        warn("autofarm.lua: Tween.lua không hợp lệ hoặc không tồn tại! Dùng di chuyển cơ bản.")
+        Window:MakeNotification({
+            Name = "AutoFarm",
+            Content = "Lỗi: Module tween không hợp lệ hoặc không tồn tại! Dùng di chuyển cơ bản.",
+            Image = "rbxassetid://4483345998",
+            Time = 5
+        })
         tween = {
             MoveTo = function(pos, dur, cb)
-                local player = Players.LocalPlayer
-                local char = player and player.Character
+                local char = Player and Player.Character
                 local hrp = char and char:FindFirstChild("HumanoidRootPart")
-                if hrp then
-                    hrp.CFrame = CFrame.new(pos)
-                end
+                if hrp then hrp.CFrame = CFrame.new(pos) end
                 if cb then cb() end
             end,
             Stop = function() end
@@ -28,18 +36,16 @@ return function(Window)
 
     local FarmAreas = _G.modules.enemylist
     if not FarmAreas or type(FarmAreas) ~= "table" then
-        warn("autofarm.lua: Dữ liệu enemylist.lua không hợp lệ!")
+        Window:MakeNotification({
+            Name = "AutoFarm",
+            Content = "Lỗi: Dữ liệu enemylist.lua không hợp lệ!",
+            Image = "rbxassetid://4483345998",
+            Time = 5
+        })
         return
     end
 
-    -- Các biến trạng thái
-    local Player = Players.LocalPlayer
-    local Character, Humanoid, HRP
-    local farming = false
-    local selectedFarmMode = "Tự động"
-    local attackKey = "Z"
-
-    -- Cập nhật thông tin nhân vật
+    -- ==================== HÀM HỖ TRỢ ====================
     local function UpdateCharacter()
         Character = Player.Character
         if Character then
@@ -50,17 +56,25 @@ return function(Window)
     Player.CharacterAdded:Connect(UpdateCharacter)
     UpdateCharacter()
 
-    -- Lấy level người chơi
     local function getPlayerLevel()
         local success, level = pcall(function() return Player.Data.Level.Value end)
         return success and level or 1
     end
 
-    -- RemoteFunction 'Comm'
+    -- Kiểm tra RemoteFunction 'Comm'
     local Comm
-    local success, err = pcall(function() Comm = ReplicatedStorage.Remotes:WaitForChild("Comm", 5) end)
-    if not success or not Comm then
-        warn("autofarm.lua: Không tìm thấy RemoteFunction 'Comm'. Quest có thể không hoạt động.")
+    do
+        local success, err = pcall(function()
+            Comm = ReplicatedStorage.Remotes:WaitForChild("Comm", 5)
+        end)
+        if not success or not Comm then
+            Window:MakeNotification({
+                Name = "AutoFarm",
+                Content = "Không tìm thấy RemoteFunction 'Comm'. Quest có thể không hoạt động.",
+                Image = "rbxassetid://4483345998",
+                Time = 5
+            })
+        end
     end
 
     -- ==================== CÁC HÀM LOGIC ====================
@@ -92,7 +106,6 @@ return function(Window)
         end
     end
 
-    -- Nhận quest farm, có callback khi xong di chuyển + thao tác
     local function GetQuest(farmData, StatusLabel, callback)
         if not farmData.QuestPos or not farmData.QuestName then
             if callback then callback() end
@@ -114,7 +127,6 @@ return function(Window)
         end
     end
 
-    -- Tấn công mob, callback khi mob chết hoặc không còn farm nữa
     local function AttackMob(enemyData, StatusLabel, callback)
         local targetMob = nil
         local minDistance = 50
@@ -153,7 +165,6 @@ return function(Window)
         end
     end
 
-    -- Vòng farm chính sử dụng callback để điều khiển flow farm mượt
     local function StartFarming(StatusLabel)
         if not farming then
             StatusLabel:Set("Trạng thái: Đã tắt farm")
@@ -194,17 +205,15 @@ return function(Window)
                             hasQuest = true
                         end
                         if not hasQuest then
-                            -- Nhận quest, khi xong tự tiếp tục vòng
                             GetQuest(enemy, StatusLabel, function()
                                 if farming then
-                                    -- Tiếp tục farm
+                                    -- Tiếp tục vòng farm sau khi nhận quest xong
                                 end
                             end)
                         else
-                            -- Tấn công mob, khi xong tự tiếp tục vòng
                             AttackMob(enemy, StatusLabel, function()
                                 if farming then
-                                    -- Tiếp tục farm
+                                    -- Tiếp tục vòng farm sau khi tấn công xong
                                 end
                             end)
                         end
@@ -214,7 +223,6 @@ return function(Window)
                     end
                 end
             end
-
             tween:Stop()
             StatusLabel:Set("Trạng thái: Đã tắt farm")
         end)
