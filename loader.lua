@@ -13,7 +13,7 @@ local LevelStat = DataFolder:WaitForChild("Level")
 -- ==========================
 -- Orion UI Loader
 -- ==========================
-local OrionLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/shlexware/Orion/main/source"))()
+local OrionLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/hviet2510/Noda-Test/main/modules/Orion.lua"))()
 local Window = OrionLib:MakeWindow({
     Name = "Blox Fruits - Item Tracker",
     HidePremium = false,
