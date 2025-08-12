@@ -13,7 +13,7 @@ local LevelStat = DataFolder:WaitForChild("Level")
 -- ==========================
 -- Orion UI Loader
 -- ==========================
-local OrionLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/hviet2510/Noda-Test/main/modules/Orion.lua"))()
+local OrionLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/shlexware/Orion/main/source"))()
 local Window = OrionLib:MakeWindow({
     Name = "Blox Fruits - Item Tracker",
     HidePremium = false,
@@ -51,13 +51,14 @@ local function SendDiscordEmbed(reason, itemName)
     local data = {
         username = "Blox Fruits Tracker",
         embeds = {{
-            title = (reason == "item" and "+ Vật phẩm mới nhận!" or "+ Cập nhật định kỳ"),
+            title = (reason == "item" and "📦 Vật phẩm mới nhận!" or "📊 Cập nhật định kỳ"),
             color = EmbedColor,
+            description = "**Beli:** +"..beli.."  |  **Fragments:** +"..frags.."  |  **Level:** +"..level,
             fields = {
                 { name = "Người chơi", value = Player.Name, inline = true },
+                { name = "Beli hiện tại", value = beli, inline = true },
+                { name = "Fragments hiện tại", value = frags, inline = true },
                 { name = "Level hiện tại", value = level, inline = true },
-                { name = "Beli", value = beli, inline = true },
-                { name = "Fragments", value = frags, inline = true },
                 { name = "Thời gian", value = os.date("%H:%M:%S"), inline = true }
             },
             footer = { text = "Farm Tracker • " .. os.date("%d/%m/%Y") }
@@ -92,7 +93,6 @@ local function CheckNewItem(item)
     end
 end
 
--- Quét item ban đầu
 for _, item in ipairs(Backpack:GetChildren()) do
     OwnedItems[item.Name] = true
 end
@@ -105,7 +105,7 @@ end)
 -- Cập nhật định kỳ
 -- ==========================
 task.spawn(function()
-    while task.wait(5) do -- Kiểm tra mỗi 5 giây
+    while task.wait(5) do
         if tick() - LastAutoUpdate >= (UpdateInterval * 60) then
             SendDiscordEmbed("auto")
             LastAutoUpdate = tick()
@@ -137,22 +137,21 @@ MainTab:AddTextbox({
     end
 })
 
-MainTab:AddSlider({
-    Name = "Thời gian cập nhật tự động (phút)",
-    Min = 5,
-    Max = 60,
-    Default = 5,
-    Color = Color3.fromRGB(255, 170, 0),
-    Increment = 1,
-    ValueName = "phút",
+MainTab:AddDropdown({
+    Name = "Thời gian cập nhật tự động",
+    Default = "5 phút",
+    Options = {"5 phút", "10 phút", "20 phút", "30 phút", "60 phút"},
     Callback = function(Value)
-        UpdateInterval = Value
-        OrionLib:MakeNotification({
-            Name = "Cập nhật thành công",
-            Content = "Thời gian tự động: " .. Value .. " phút",
-            Image = "rbxassetid://4483345998",
-            Time = 3
-        })
+        local num = tonumber(Value:match("%d+"))
+        if num then
+            UpdateInterval = num
+            OrionLib:MakeNotification({
+                Name = "Cập nhật thành công",
+                Content = "Thời gian tự động: " .. num .. " phút",
+                Image = "rbxassetid://4483345998",
+                Time = 3
+            })
+        end
     end
 })
 
