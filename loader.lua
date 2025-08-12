@@ -5,6 +5,9 @@ local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
 local Player = Players.LocalPlayer
 local Backpack = Player:WaitForChild("Backpack")
+local DataFolder = Player:WaitForChild("Data")
+local BeliStat = DataFolder:WaitForChild("Beli")
+local FragStat = DataFolder:WaitForChild("Fragments")
 
 -- ==========================
 -- Orion UI Loader
@@ -17,17 +20,24 @@ local Window = OrionLib:MakeWindow({
     ConfigFolder = "BF_ItemTracker"
 })
 
--- Biến lưu Webhook
+-- ==========================
+-- Biến toàn cục
+-- ==========================
 local WebhookURL = ""
 local EmbedColor = 0x00ffcc
 local OwnedItems = {}
+local UpdateInterval = 5 -- phút
+local LastAutoUpdate = tick()
+
+-- URLs icon
+local BeliIconURL = "https://i.imgur.com/9om7Fvu.png" -- Icon Beli
+local FragIconURL = "https://i.imgur.com/nXwZ2Dl.png" -- Icon Fragments
 
 -- ==========================
--- Hàm gửi Embed
+-- Hàm gửi Webhook
 -- ==========================
-local function SendDiscordEmbed(itemName)
+local function SendDiscordEmbed(reason, itemName)
     if WebhookURL == "" then
-        warn("Chưa nhập Webhook URL!")
         OrionLib:MakeNotification({
             Name = "Lỗi",
             Content = "Bạn chưa nhập Webhook URL!",
@@ -37,19 +47,28 @@ local function SendDiscordEmbed(itemName)
         return
     end
 
+    local beli = tostring(BeliStat.Value)
+    local frags = tostring(FragStat.Value)
+
     local data = {
         username = "Blox Fruits Tracker",
         embeds = {{
-            title = "📦 Vật phẩm mới nhận!",
+            title = (reason == "item" and "📦 Vật phẩm mới nhận!" or "📊 Cập nhật định kỳ"),
             color = EmbedColor,
+            thumbnail = { url = (reason == "item" and BeliIconURL or FragIconURL) },
             fields = {
                 { name = "Người chơi", value = Player.Name, inline = true },
-                { name = "Vật phẩm", value = itemName, inline = true },
+                { name = "Beli hiện tại", value = beli, inline = true },
+                { name = "Fragments hiện tại", value = frags, inline = true },
                 { name = "Thời gian", value = os.date("%H:%M:%S"), inline = true }
             },
             footer = { text = "Farm Tracker • " .. os.date("%d/%m/%Y") }
         }}
     }
+
+    if reason == "item" and itemName then
+        table.insert(data.embeds[1].fields, 2, { name = "Vật phẩm", value = itemName, inline = true })
+    end
 
     local headers = {["Content-Type"] = "application/json"}
     local body = HttpService:JSONEncode(data)
@@ -61,17 +80,17 @@ local function SendDiscordEmbed(itemName)
     elseif request then
         request({Url = WebhookURL, Method = "POST", Headers = headers, Body = body})
     else
-        warn("Executor của bạn không hỗ trợ HTTP requests!")
+        warn("Executor không hỗ trợ HTTP requests!")
     end
 end
 
 -- ==========================
--- Hàm kiểm tra item mới
+-- Kiểm tra item mới
 -- ==========================
 local function CheckNewItem(item)
     if not OwnedItems[item.Name] then
         OwnedItems[item.Name] = true
-        SendDiscordEmbed(item.Name)
+        SendDiscordEmbed("item", item.Name)
     end
 end
 
@@ -79,11 +98,21 @@ end
 for _, item in ipairs(Backpack:GetChildren()) do
     OwnedItems[item.Name] = true
 end
-
--- Theo dõi Backpack + Character
 Backpack.ChildAdded:Connect(CheckNewItem)
 Player.CharacterAdded:Connect(function(char)
     char.ChildAdded:Connect(CheckNewItem)
+end)
+
+-- ==========================
+-- Cập nhật định kỳ
+-- ==========================
+task.spawn(function()
+    while task.wait(5) do -- Kiểm tra mỗi 5 giây
+        if tick() - LastAutoUpdate >= (UpdateInterval * 60) then
+            SendDiscordEmbed("auto")
+            LastAutoUpdate = tick()
+        end
+    end
 end)
 
 -- ==========================
@@ -110,10 +139,29 @@ MainTab:AddTextbox({
     end
 })
 
+MainTab:AddSlider({
+    Name = "Thời gian cập nhật tự động (phút)",
+    Min = 5,
+    Max = 60,
+    Default = 5,
+    Color = Color3.fromRGB(255, 170, 0),
+    Increment = 1,
+    ValueName = "phút",
+    Callback = function(Value)
+        UpdateInterval = Value
+        OrionLib:MakeNotification({
+            Name = "Cập nhật thành công",
+            Content = "Thời gian tự động: " .. Value .. " phút",
+            Image = "rbxassetid://4483345998",
+            Time = 3
+        })
+    end
+})
+
 MainTab:AddButton({
     Name = "Test Webhook",
     Callback = function()
-        SendDiscordEmbed("Vật phẩm test (Kiểm tra webhook)")
+        SendDiscordEmbed("item", "Vật phẩm test (Kiểm tra webhook)")
         OrionLib:MakeNotification({
             Name = "Đang gửi test...",
             Content = "Kiểm tra Discord của bạn!",
@@ -123,6 +171,7 @@ MainTab:AddButton({
     end
 })
 
-MainTab:AddLabel("Script sẽ tự gửi thông báo khi nhận vật phẩm mới.")
+MainTab:AddLabel("• Cập nhật tự động theo phút đã chọn")
+MainTab:AddLabel("• Nếu có vật phẩm mới, vẫn gửi ngay lập tức")
 
 OrionLib:Init()
