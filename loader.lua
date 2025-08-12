@@ -1,144 +1,104 @@
--- ==========================
--- Dịch vụ Roblox
--- ==========================
+-- Script Webhook Notify Blox Fruits
+-- Yêu cầu Orion UI (link custom)
+
 local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
 local HttpService = game:GetService("HttpService")
-local Player = Players.LocalPlayer
-local Backpack = Player:WaitForChild("Backpack")
-local DataFolder = Player:WaitForChild("Data")
-local BeliStat = DataFolder:WaitForChild("Beli")
-local FragStat = DataFolder:WaitForChild("Fragments")
-local LevelStat = DataFolder:WaitForChild("Level")
 
--- ==========================
--- Orion UI Loader
--- ==========================
-local OrionLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/hviet2510/Noda-Test/main/modules/Orion.lua"))()
-local Window = OrionLib:MakeWindow({
-    Name = "Blox Fruits - Item Tracker",
-    HidePremium = false,
-    SaveConfig = true,
-    ConfigFolder = "BF_ItemTracker"
-})
+-- Load Orion từ link custom
+local OrionLib = loadstring(game:HttpGet(('https://raw.githubusercontent.com/hviet2510/Noda-Test/main/modules/Orion.lua')))()
+local Window = OrionLib:MakeWindow({Name = "Webhook Notify", HidePremium = false, SaveConfig = true, ConfigFolder = "BFWebhook"})
 
--- ==========================
--- Biến toàn cục
--- ==========================
+local MainTab = Window:MakeTab({Name = "Cài đặt", Icon = "rbxassetid://4483345998", PremiumOnly = false})
+
+-- Cấu hình
 local WebhookURL = ""
-local EmbedColor = 0x00ffcc
-local OwnedItems = {}
 local UpdateInterval = 5 -- phút
-local LastAutoUpdate = tick()
+local LastItems = {}
+local LastBeli = 0
+local LastFrags = 0
+local LastLevel = 0
 
--- ==========================
--- Hàm gửi Webhook
--- ==========================
-local function SendDiscordEmbed(reason, itemName)
-    if WebhookURL == "" then
-        OrionLib:MakeNotification({
-            Name = "Lỗi",
-            Content = "Bạn chưa nhập Webhook URL!",
-            Image = "rbxassetid://4483345998",
-            Time = 3
-        })
-        return
-    end
-
-    local beli = tostring(BeliStat.Value)
-    local frags = tostring(FragStat.Value)
-    local level = tostring(LevelStat.Value)
-
+-- Hàm gửi webhook
+local function SendWebhook(title, desc)
+    if WebhookURL == "" then return end
     local data = {
-        username = "Blox Fruits Tracker",
         embeds = {{
-            title = (reason == "item" and "📦 Vật phẩm mới nhận!" or "📊 Cập nhật định kỳ"),
-            color = EmbedColor,
-            description = "**Beli:** +"..beli.."  |  **Fragments:** +"..frags.."  |  **Level:** +"..level,
-            fields = {
-                { name = "Người chơi", value = Player.Name, inline = true },
-                { name = "Beli hiện tại", value = beli, inline = true },
-                { name = "Fragments hiện tại", value = frags, inline = true },
-                { name = "Level hiện tại", value = level, inline = true },
-                { name = "Thời gian", value = os.date("%H:%M:%S"), inline = true }
-            },
-            footer = { text = "Farm Tracker • " .. os.date("%d/%m/%Y") }
+            title = "+ " .. title,
+            description = desc,
+            color = 0x00ff00,
+            footer = {text = os.date("%Y-%m-%d %H:%M:%S")}
         }}
     }
-
-    if reason == "item" and itemName then
-        table.insert(data.embeds[1].fields, 2, { name = "Vật phẩm", value = itemName, inline = true })
-    end
-
-    local headers = {["Content-Type"] = "application/json"}
     local body = HttpService:JSONEncode(data)
+    request({
+        Url = WebhookURL,
+        Method = "POST",
+        Headers = {["Content-Type"] = "application/json"},
+        Body = body
+    })
+end
 
-    if syn and syn.request then
-        syn.request({Url = WebhookURL, Method = "POST", Headers = headers, Body = body})
-    elseif http_request then
-        http_request({Url = WebhookURL, Method = "POST", Headers = headers, Body = body})
-    elseif request then
-        request({Url = WebhookURL, Method = "POST", Headers = headers, Body = body})
-    else
-        warn("Executor không hỗ trợ HTTP requests!")
+-- Theo dõi item mới
+local function CheckItems()
+    local backpack = LocalPlayer.Backpack:GetChildren()
+    local char = LocalPlayer.Character and LocalPlayer.Character:GetChildren() or {}
+    local all = {}
+    for _, v in pairs(backpack) do table.insert(all, v.Name) end
+    for _, v in pairs(char) do
+        if v:IsA("Tool") then table.insert(all, v.Name) end
     end
-end
-
--- ==========================
--- Kiểm tra item mới
--- ==========================
-local function CheckNewItem(item)
-    if not OwnedItems[item.Name] then
-        OwnedItems[item.Name] = true
-        SendDiscordEmbed("item", item.Name)
-    end
-end
-
-for _, item in ipairs(Backpack:GetChildren()) do
-    OwnedItems[item.Name] = true
-end
-Backpack.ChildAdded:Connect(CheckNewItem)
-Player.CharacterAdded:Connect(function(char)
-    char.ChildAdded:Connect(CheckNewItem)
-end)
-
--- ==========================
--- Cập nhật định kỳ
--- ==========================
-task.spawn(function()
-    while task.wait(5) do
-        if tick() - LastAutoUpdate >= (UpdateInterval * 60) then
-            SendDiscordEmbed("auto")
-            LastAutoUpdate = tick()
+    for _, item in pairs(all) do
+        if not table.find(LastItems, item) then
+            SendWebhook("Vật phẩm mới!", "+ " .. item)
         end
     end
-end)
+    LastItems = all
+end
 
--- ==========================
--- UI Orion
--- ==========================
-local MainTab = Window:MakeTab({
-    Name = "Cài đặt Webhook",
-    Icon = "rbxassetid://4483345998",
-    PremiumOnly = false
-})
+-- Theo dõi Beli, Frags, Level
+local function CheckStats()
+    local leaderstats = LocalPlayer:FindFirstChild("Data")
+    if leaderstats then
+        local beli = leaderstats:FindFirstChild("Beli") and leaderstats.Beli.Value or 0
+        local frags = leaderstats:FindFirstChild("Fragments") and leaderstats.Fragments.Value or 0
+        local lvl = leaderstats:FindFirstChild("Level") and leaderstats.Level.Value or 0
 
+        if beli ~= LastBeli then
+            SendWebhook("Beli thay đổi", "+ " .. tostring(beli))
+            LastBeli = beli
+        end
+        if frags ~= LastFrags then
+            SendWebhook("Fragments thay đổi", "+ " .. tostring(frags))
+            LastFrags = frags
+        end
+        if lvl ~= LastLevel then
+            SendWebhook("Level thay đổi", "+ " .. tostring(lvl))
+            LastLevel = lvl
+        end
+    end
+end
+
+-- Cập nhật định kỳ
+local function AutoUpdate()
+    while wait(UpdateInterval * 60) do
+        CheckItems()
+        CheckStats()
+    end
+end
+
+-- UI
 MainTab:AddTextbox({
-    Name = "Discord Webhook URL",
+    Name = "Webhook URL",
     Default = "",
     TextDisappear = false,
     Callback = function(Value)
         WebhookURL = Value
-        OrionLib:MakeNotification({
-            Name = "Webhook đã lưu",
-            Content = "Link Webhook: " .. Value,
-            Image = "rbxassetid://4483345998",
-            Time = 3
-        })
     end
 })
 
 MainTab:AddDropdown({
-    Name = "Thời gian cập nhật tự động",
+    Name = "Thời gian cập nhật",
     Default = "5 phút",
     Options = {"5 phút", "10 phút", "20 phút", "30 phút", "60 phút"},
     Callback = function(Value)
@@ -146,8 +106,8 @@ MainTab:AddDropdown({
         if num then
             UpdateInterval = num
             OrionLib:MakeNotification({
-                Name = "Cập nhật thành công",
-                Content = "Thời gian tự động: " .. num .. " phút",
+                Name = "Cập nhật",
+                Content = "Tự động: " .. num .. " phút",
                 Image = "rbxassetid://4483345998",
                 Time = 3
             })
@@ -156,19 +116,13 @@ MainTab:AddDropdown({
 })
 
 MainTab:AddButton({
-    Name = "Test Webhook",
+    Name = "Test gửi Webhook",
     Callback = function()
-        SendDiscordEmbed("item", "Vật phẩm test (Kiểm tra webhook)")
-        OrionLib:MakeNotification({
-            Name = "Đang gửi test...",
-            Content = "Kiểm tra Discord của bạn!",
-            Image = "rbxassetid://4483345998",
-            Time = 3
-        })
+        SendWebhook("Test Webhook", "+ Đây là thông báo test")
     end
 })
 
-MainTab:AddLabel("• Cập nhật tự động theo phút đã chọn")
-MainTab:AddLabel("• Nếu có vật phẩm mới, vẫn gửi ngay lập tức")
-
-OrionLib:Init()
+-- Khởi động
+task.spawn(AutoUpdate)
+CheckItems()
+CheckStats()
