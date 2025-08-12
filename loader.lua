@@ -8,6 +8,7 @@ local Backpack = Player:WaitForChild("Backpack")
 local DataFolder = Player:WaitForChild("Data")
 local BeliStat = DataFolder:WaitForChild("Beli")
 local FragStat = DataFolder:WaitForChild("Fragments")
+local LevelStat = DataFolder:WaitForChild("Level")
 
 -- ==========================
 -- Orion UI Loader
@@ -29,10 +30,6 @@ local OwnedItems = {}
 local UpdateInterval = 5 -- phút
 local LastAutoUpdate = tick()
 
--- URLs icon
-local BeliIconURL = "https://i.imgur.com/9om7Fvu.png" -- Icon Beli
-local FragIconURL = "https://i.imgur.com/nXwZ2Dl.png" -- Icon Fragments
-
 -- ==========================
 -- Hàm gửi Webhook
 -- ==========================
@@ -49,17 +46,18 @@ local function SendDiscordEmbed(reason, itemName)
 
     local beli = tostring(BeliStat.Value)
     local frags = tostring(FragStat.Value)
+    local level = tostring(LevelStat.Value)
 
     local data = {
         username = "Blox Fruits Tracker",
         embeds = {{
-            title = (reason == "item" and "📦 Vật phẩm mới nhận!" or "📊 Cập nhật định kỳ"),
+            title = (reason == "item" and "+ Vật phẩm mới nhận!" or "+ Cập nhật định kỳ"),
             color = EmbedColor,
-            thumbnail = { url = (reason == "item" and BeliIconURL or FragIconURL) },
             fields = {
                 { name = "Người chơi", value = Player.Name, inline = true },
-                { name = "Beli hiện tại", value = beli, inline = true },
-                { name = "Fragments hiện tại", value = frags, inline = true },
+                { name = "Level hiện tại", value = level, inline = true },
+                { name = "Beli", value = beli, inline = true },
+                { name = "Fragments", value = frags, inline = true },
                 { name = "Thời gian", value = os.date("%H:%M:%S"), inline = true }
             },
             footer = { text = "Farm Tracker • " .. os.date("%d/%m/%Y") }
